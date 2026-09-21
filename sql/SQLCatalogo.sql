@@ -1,0 +1,2 @@
+CREATE DATABASE SQLCatalogo;
+USE SQLCatalogo;
