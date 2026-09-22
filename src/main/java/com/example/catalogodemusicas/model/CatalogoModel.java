@@ -84,4 +84,12 @@ public class CatalogoModel {
     public void setArquivoAudio(String arquivoAudio) {
         this.arquivoAudio = arquivoAudio;
     }
+
+    // Mostrar o tempo em Minutos na Tela Depois
+
+    public String getTempoFormatado() {
+        int minutos = tempoSegundos / 60;
+        int segundos = tempoSegundos % 60;
+        return String.format("%d:%02d", minutos, segundos);
+    }
 }
