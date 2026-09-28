@@ -28,10 +28,13 @@ public class CatalogoService {
             musica.setAlbum(catalogoModelAtualizado.getAlbum());
             musica.setArtistas(catalogoModelAtualizado.getArtistas());
             musica.setTempoSegundos(catalogoModelAtualizado.getTempoSegundos());
-            musica.setArquivoAudio(catalogoModelAtualizado.getArquivoAudio());
+
+            if (catalogoModelAtualizado.getArquivoAudio() != null) {
+                musica.setArquivoAudio(catalogoModelAtualizado.getArquivoAudio());
+            }
+
             return catalogoRepository.save(musica);
-        }
-        else {
+        } else {
             throw new RuntimeException("Música não encontrada com id: " + id);
         }
     }

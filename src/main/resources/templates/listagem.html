@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Catálogo Musical - Listagem</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg" data-bs-theme="dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/musicas}">CatalogoMusical</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/musicas}">Listagem</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/musicas/novo}">Cadastro</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-11 col-xl-10 mx-auto">
+            <div class="card mt-4 mb-4">
+                <div class="card-body">
+                    <h2 class="text-center mb-4">Listagem de Músicas</h2>
+
+                    <!-- Mensagem de Sucesso -->
+                    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <span th:text="${success}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Mensagem de Erro -->
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Realizar Pesquisa por Nome da Música, Álbum e Artistas -->
+                    <form th:action="@{/musicas}" method="get" class="d-flex flex-wrap gap-2 mb-3">
+                        <select name="campoBusca" class="form-select w-auto">
+                            <option value="nome">Nome</option>
+                            <option value="album">Álbum</option>
+                            <option value="artistas">Artistas</option>
+                        </select>
+                        <input type="text" name="termoBusca" class="form-control w-auto flex-grow-1" placeholder="Digite o termo de busca">
+                        <button type="submit" class="btn btn-dark">Buscar</button>
+                        <a th:href="@{/musicas}" class="btn btn-outline-dark">Limpar</a>
+                    </form>
+
+                    <!-- Ordenar através de Nome e Tempo ( Não achei necessário ordenar por Autores e Álbum ) -->
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <span>Ordenar por:</span>
+                        <a class="btn btn-sm btn-outline-dark" th:href="@{/musicas(campoOrdenacao='nome', direcaoOrdenacao='asc')}">Nome ↑</a>
+                        <a class="btn btn-sm btn-outline-dark" th:href="@{/musicas(campoOrdenacao='nome', direcaoOrdenacao='desc')}">Nome ↓</a>
+                        <a class="btn btn-sm btn-outline-dark" th:href="@{/musicas(campoOrdenacao='tempo', direcaoOrdenacao='asc')}">Duração ↑</a>
+                        <a class="btn btn-sm btn-outline-dark" th:href="@{/musicas(campoOrdenacao='tempo', direcaoOrdenacao='desc')}">Duração ↓</a>
+                    </div>
+
+                    <!-- Tabelas de Tocar Música, Nome, Álbum, etc -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                            <tr>
+                                <th class="text-center">Tocar</th>
+                                <th class="text-center">Nome</th>
+                                <th class="text-center">Álbum</th>
+                                <th class="text-center">Artistas</th>
+                                <th class="text-center">Duração</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                            </thead>
+                            <tbody class="table-group-divider">
+                            <tr th:if="${#lists.isEmpty(musicas)}">
+                                <td colspan="6" class="text-center text-muted">Nenhuma música encontrada.</td>
+                            </tr>
+                            <tr th:each="musica : ${musicas}">
+                                <td class="text-center">
+                                    <audio th:if="${musica.arquivoAudio}" controls style="width: 250px; height: 32px;">
+                                        <source th:src="@{'/audio/' + ${musica.arquivoAudio}}">
+                                    </audio>
+                                    <span th:unless="${musica.arquivoAudio}" class="text-muted">Sem áudio</span>
+                                </td>
+                                <td th:text="${musica.nome}"></td>
+                                <td th:text="${musica.album}"></td>
+                                <td th:text="${musica.artistas}"></td>
+                                <td th:text="${musica.tempoFormatado}" class="text-center"></td>
+                                <td class="text-center">
+                                    <a th:href="@{/musicas/editar/{id}(id=${musica.id})}"
+                                       class="btn btn-sm btn-dark me-1">
+                                        Editar
+                                    </a>
+
+                                    <!-- Ao clicar em Excluir -->
+                                    <button type="button" class="btn btn-sm btn-outline-dark"
+                                            data-bs-toggle="modal"
+                                            th:data-bs-target="|#confirmarExclusao-${musica.id}|">
+                                        Excluir
+                                    </button>
+
+                                    <!-- Confirmação para Excluir -->
+                                    <div class="modal fade" th:id="|confirmarExclusao-${musica.id}|" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Excluir Música</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                                </div>
+
+                                                <div class="modal-body text-start">
+                                                    Tem certeza de que deseja excluir a música
+                                                    <strong th:text="${musica.nome}"></strong>?
+                                                </div>
+
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+                                                    <!-- Onde ocorre a Exclusão -->
+                                                    <form th:action="@{/musicas/{id}(id=${musica.id})}" method="post" class="d-inline">
+                                                        <input type="hidden" name="_method" value="delete"/>
+                                                        <button type="submit" class="btn btn-dark">Excluir</button>
+                                                    </form>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

@@ -54,7 +54,7 @@ public class CatalogoController {
 
     @GetMapping("/novo")
     public String abrirCadastro(Model model){
-        model.addAttribute("musicas", new CatalogoModel());
+        model.addAttribute("catalogoModel", new CatalogoModel());
         return "cadastro";
     }
 
@@ -63,25 +63,36 @@ public class CatalogoController {
             @Valid @ModelAttribute CatalogoModel catalogoModel,
             BindingResult erros,
             @RequestParam(value = "arquivo", required = false) MultipartFile arquivo,
-            RedirectAttributes ra){
+            Model model,
+            RedirectAttributes ra) {
 
-        if (erros.hasErrors()) {
+        boolean semArquivo = (arquivo == null || arquivo.isEmpty());
+
+        if (erros.hasErrors() || semArquivo) {
+            if (semArquivo) {
+                model.addAttribute("erroArquivo", "É obrigatório selecionar um arquivo de áudio.");
+            }
             return "cadastro";
         }
 
         salvarArquivoSeExistir(catalogoModel, arquivo);
         catalogoService.cadastrarMusica(catalogoModel);
 
-        ra.addFlashAttribute("msg", "Música cadastrada com sucesso!");
+        ra.addFlashAttribute("success", "Música cadastrada com sucesso!");
         return "redirect:/musicas";
     }
 
     @GetMapping("/editar/{id}")
-    public String abrirEdicao(@PathVariable("id") Long id, Model model){
-        CatalogoModel musica = catalogoService.buscarPorId(id)
-                .orElseThrow(() -> new RuntimeException("Música não encontrada com id: " + id));
-        model.addAttribute("catalogoModel", musica);
-        return "cadastro";
+    public String abrirEdicao(@PathVariable Long id, Model model, RedirectAttributes ra) {
+        return catalogoService.buscarPorId(id)
+                .map(musica -> {
+                    model.addAttribute("catalogoModel", musica);
+                    return "cadastro";
+                })
+                .orElseGet(() -> {
+                    ra.addFlashAttribute("error", "Música não encontrada com id: " + id);
+                    return "redirect:/musicas";
+                });
     }
 
     @PutMapping("/{id}")
@@ -89,15 +100,19 @@ public class CatalogoController {
                             @Valid @ModelAttribute CatalogoModel catalogoModel,
                             BindingResult erros,
                             @RequestParam(value = "arquivo", required = false) MultipartFile arquivo,
-                            RedirectAttributes ra){
+                            RedirectAttributes ra) {
         if (erros.hasErrors()) {
+            catalogoModel.setId(id);
             return "cadastro";
         }
 
-        salvarArquivoSeExistir(catalogoModel, arquivo);
-        catalogoService.atualizarCliente(id, catalogoModel);
-
-        ra.addFlashAttribute("msg", "Música atualizada com sucesso!");
+        try {
+            salvarArquivoSeExistir(catalogoModel, arquivo);
+            catalogoService.atualizarCliente(id, catalogoModel);
+            ra.addFlashAttribute("success", "Música atualizada com sucesso!");
+        } catch (RuntimeException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/musicas";
     }
 
@@ -105,9 +120,9 @@ public class CatalogoController {
     public String excluir(@PathVariable Long id, RedirectAttributes ra) {
         try {
             catalogoService.excluirMusica(id);
-            ra.addFlashAttribute("msg", "Música excluída com sucesso!");
+            ra.addFlashAttribute("success", "Música excluída com sucesso!");
         } catch (RuntimeException e) {
-            ra.addFlashAttribute("msg", e.getMessage());
+            ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/musicas";
     }
